@@ -17,6 +17,11 @@ data Sort = Star | Box | SortNum Int
 data Variable = Var String | Anonymous
   -- deriving (Show,Eq)
 
+Eq Variable where
+  (Var x) == (Var y) = x == y
+  Anonymous == Anonymous = True
+  _ == _ = False
+
 mutual
   -- Typed Variable
   data TVariable = TVar Variable Expr
