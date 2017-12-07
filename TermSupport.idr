@@ -125,5 +125,93 @@ mutual
     Unknown                                         => []
 
 ---------------------------------------------------------------------------------
--- TODO: (Weak) Substitutions
+-- (Weak) Substitutions
 ---------------------------------------------------------------------------------
+
+data SSubst = Sub TVariable Expr -- singleton substitution
+
+Subst : Type
+Subst = List SSubst
+
+interface SubstC t where
+  applySSubst  : SSubst -> t -> t
+  applySubst   : Subst  -> t -> t
+  -- default
+  applySubst subst expr  = foldr applySSubst expr subst
+
+mutual
+
+  SubstC Expr where
+   applySSubst ssubst@(Sub (TVar vars _) exprs) expr = case expr of
+    AppExpr exa exb                                 => AppExpr (applySSubst ssubst exa) (applySSubst ssubst exb)
+    LamExpr tv@(TVar var expr1) expr2               => if (var==vars)
+                                                        then LamExpr tv expr2
+                                                        else LamExpr (TVar var (applySSubst ssubst expr1)) (applySSubst ssubst expr2)
+    PiExpr  tv@(TVar var expr1) expr2               => if (var==vars)
+                                                        then PiExpr  tv expr2
+                                                        else PiExpr  (TVar var (applySSubst ssubst expr1)) (applySSubst ssubst expr2)
+    VarExpr tvv@(TVar var expr1)                    => if (var==vars)
+                                                        then exprs
+                                                        else VarExpr (TVar var (applySSubst ssubst expr1))
+    CaseExpr expr1 alts t                           => CaseExpr (applySSubst ssubst expr1) (applySSubst ssubst alts) (applySSubst ssubst t)
+    exrest                                          => exrest
+
+  SubstC (List Alt) where
+    applySSubst ssubst [] = []
+    applySSubst ssubst ((MKAlt tc tcas dcas res) :: as) = (MKAlt tc tcas dcas (applySSubst ssubst res)) :: (applySSubst ssubst as)
+
+
+applySubToLeftMost : Subst -> Expr -> Expr
+applySubToLeftMost sub expr = case expr of
+  (AppExpr ex1 ex2) => AppExpr (applySubToLeftMost sub ex1) ex2
+  _                 => applySubst sub expr
+
+
+---------------------------------------------------------------------------------
+-- Strong Substitions
+---------------------------------------------------------------------------------
+-- strong substitution is slower than weak substitution, but prevents
+-- capturing of variables by means of alpha conversion.
+-- caution: very naive and slow implemenation!!!
+
+interface StrongSubstC t where
+  applySStrongSubst  : SSubst -> t -> t
+  applyStrongSubst   : Subst  -> t -> t
+  -- default
+  applyStrongSubst subst expr  = foldr applySStrongSubst expr subst
+
+freshFreeVars : Stream Variable
+freshFreeVars = ?implementMe--[Var $ "v"++(show i) | i <-[1..]]
+
+freshFreeVar : List Variable -> Variable
+freshFreeVar = ?fixMe --head (filter (\v => not(v `elem` freeVars)) freshFreeVars)
+
+mutual
+  StrongSubstC Expr where
+   applySStrongSubst ssubst@(Sub (TVar vars _) exprs) expr = case expr of
+    AppExpr exa exb                                 => AppExpr (applySStrongSubst ssubst exa) (applySStrongSubst ssubst exb)
+    LamExpr tv ex                                   => lamSStrongSubst ssubst tv ex
+    -- PiExpr  tv ex                                   -> piSStrongSubst ssubst (PiExpr tv ex)
+    -- VarExpr tvv@(TVar var expr1)      | (var==vars) -> exprs
+    --                                   | otherwise   -> VarExpr (TVar var (applySStrongSubst ssubst expr1))
+    -- CaseExpr expr1 alts t                           -> CaseExpr (applySStrongSubst ssubst expr1) (applySStrongSubst ssubst alts) (applySStrongSubst ssubst t)
+    exrest                                          => exrest
+
+  lamSStrongSubst : SSubst -> TVariable -> Expr -> Expr
+  lamSStrongSubst ssubst@(Sub (TVar vars _) exprs) tv@(TVar var expr1) expr2 =
+    if var==vars
+      then LamExpr (TVar var (applySStrongSubst ssubst expr1)) expr2
+    else if not $ vars `elem` freeVarsExpr2
+      then LamExpr (TVar var (applySStrongSubst ssubst expr1)) expr2
+    else if not $ var  `elem` freeVarsExprs
+      then LamExpr (TVar var (applySStrongSubst ssubst expr1)) (applySStrongSubst ssubst expr2)
+    else lamSStrongSubst ssubst (TVar ffVar expr1) ((applySStrongSubst (Sub tv (VarExpr (TVar ffVar expr1)))) expr2)
+    where
+      freeVarsExprs : List Variable
+      freeVarsExprs = (exFreeVars exprs)
+      freeVarsExpr2 : List Variable
+      freeVarsExpr2 = (exFreeVars expr2)
+      freeVars      : List Variable
+      freeVars      = freeVarsExprs ++ freeVarsExpr2
+      ffVar  : Variable
+      ffVar  = ?ccc --freshFreeVar freeVars
