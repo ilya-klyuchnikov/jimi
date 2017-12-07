@@ -168,6 +168,43 @@ applySubToLeftMost sub expr = case expr of
 
 
 ---------------------------------------------------------------------------------
+-- Equality modulo alpha conversion
+---------------------------------------------------------------------------------
+
+equal : Expr -> Expr -> Bool
+equal (AppExpr ex1l ex1r)
+      (AppExpr ex2l ex2r)                     = equal ex1l ex2l && equal ex1r ex2r
+
+equal (LamExpr tv1@(TVar (Var v1) exv1) ex1)
+      (LamExpr tv2@(TVar (Var v2) exv2) ex2)  = case (v1==v2) of
+                                                True   => equal ex1 ex2
+                                                False  => equal ex1 $ applySubst [Sub tv2 (VarExpr tv1)] ex2
+equal (LamExpr tv1@(TVar Anonymous exv1) ex1)
+      (LamExpr tv2@(TVar (Var v2) exv2) ex2)      = equal ex1 ex2
+equal (LamExpr tv1@(TVar (Var v1) exv1) ex1)
+      (LamExpr tv2@(TVar Anonymous exv2) ex2)     = equal ex1 ex2
+equal (LamExpr tv1@(TVar Anonymous exv1) ex1)
+      (LamExpr tv2@(TVar Anonymous exv2) ex2)     = equal ex1 ex2
+
+equal (PiExpr tv1@(TVar (Var v1) exv1) ex1)
+      (PiExpr tv2@(TVar (Var v2) exv2) ex2)  = case (v1==v2) of
+                                                True   => equal ex1 ex2
+                                                False  => equal ex1 $ applySubst [Sub tv2 (VarExpr tv1)] ex2
+equal (PiExpr tv1@(TVar Anonymous exv1) ex1)
+      (PiExpr tv2@(TVar (Var v2) exv2) ex2)      = equal ex1 ex2
+equal (PiExpr tv1@(TVar (Var v1) exv1) ex1)
+      (PiExpr tv2@(TVar Anonymous exv2) ex2)     = equal ex1 ex2
+equal (PiExpr tv1@(TVar Anonymous exv1) ex1)
+      (PiExpr tv2@(TVar Anonymous exv2) ex2)     = equal ex1 ex2
+
+equal (VarExpr tv1@(TVar var1 ex1))
+      (VarExpr tv2@(TVar var2 ex2))           = var1==var2
+equal (SortExpr s1) (SortExpr s2)             = s1 == s2
+equal Unknown Unknown                         = True
+equal (LitExpr l1) (LitExpr l2)               = l1 == l2
+equal _ _                                     = False
+
+---------------------------------------------------------------------------------
 -- Strong Substitions
 ---------------------------------------------------------------------------------
 -- strong substitution is slower than weak substitution, but prevents

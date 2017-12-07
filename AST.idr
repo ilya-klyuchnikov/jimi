@@ -9,9 +9,20 @@ module AST
 data Lit = LitInt String | IntType
   -- deriving (Show,Eq)
 
+Eq Lit where
+  (LitInt s1) == (LitInt s2) = s1 == s2
+  IntType == IntType = True
+  _ == _ = False
+
 -- Sorts
 data Sort = Star | Box | SortNum Int
   -- deriving (Show,Eq)
+
+Eq Sort where
+  Star == Star = True
+  Box == Box = True
+  (SortNum i1) == (SortNum i2) = i1 == i2
+  _ == _ = False
 
 -- Variable
 data Variable = Var String | Anonymous
