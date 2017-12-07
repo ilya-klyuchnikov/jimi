@@ -210,3 +210,12 @@ equal _ _                                     = False
 -- strong substitution is slower than weak substitution, but prevents
 -- capturing of variables by means of alpha conversion.
 -- caution: very naive and slow implemenation!!!
+
+freshFreeVar : List Variable -> Variable
+freshFreeVar vs = Var $ ("v" ++ (show (maxInd vs))) where
+  maxInd : List Variable -> Int
+  maxInd [] = 1
+  maxInd (Anonymous :: vs) = maxInd vs
+  maxInd ((Var s) :: vs) = let mayBeInt = (substr 1 (length s) s)
+                               thisInd = cast {to = Int} mayBeInt
+                           in max thisInd (maxInd vs)
