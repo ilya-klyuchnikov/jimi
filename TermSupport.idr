@@ -219,3 +219,64 @@ freshFreeVar vs = Var $ ("v" ++ (show (maxInd vs))) where
   maxInd ((Var s) :: vs) = let mayBeInt = (substr 1 (length s) s)
                                thisInd = cast {to = Int} mayBeInt
                            in max thisInd (maxInd vs)
+
+interface StrongSubstC t where
+  applySStrongSubst  : SSubst -> t -> t
+  applyStrongSubst   : Subst  -> t -> t
+  -- default
+  applyStrongSubst subst expr  = foldr applySStrongSubst expr subst
+
+mutual
+  StrongSubstC Expr where
+   applySStrongSubst ssubst@(Sub (TVar vars _) exprs) expr = case expr of
+    AppExpr exa exb                                 => AppExpr (applySStrongSubst ssubst exa) (applySStrongSubst ssubst exb)
+    LamExpr tv ex                                   => lamSStrongSubst ssubst tv ex
+    PiExpr  tv ex                                   => piSStrongSubst ssubst tv ex
+    VarExpr tvv@(TVar var expr1)                    => if (var==vars) then exprs else VarExpr (TVar var (applySStrongSubst ssubst expr1))
+    CaseExpr expr1 alts t                           => CaseExpr (applySStrongSubst ssubst expr1) (applySStrongSubst ssubst alts) (applySStrongSubst ssubst t)
+    exrest                                          => exrest
+
+  StrongSubstC Alt where
+    applySStrongSubst ssubst (MKAlt tc tcas dcas res) = MKAlt tc tcas dcas (applySStrongSubst ssubst res)
+
+  StrongSubstC (List Alt) where
+    applySStrongSubst ssubst [] = []
+    applySStrongSubst ssubst (alt :: alts) = (applySStrongSubst ssubst alt) :: (applySStrongSubst ssubst alts)
+
+  lamSStrongSubst : SSubst -> TVariable -> Expr -> Expr
+  lamSStrongSubst ssubst@(Sub (TVar vars _) exprs) tv@(TVar var expr1) expr2 =
+    if var==vars
+      then LamExpr (TVar var (applySStrongSubst ssubst expr1)) expr2
+    else if not $ vars `elem` freeVarsExpr2
+      then LamExpr (TVar var (applySStrongSubst ssubst expr1)) expr2
+    else if not $ var  `elem` freeVarsExprs
+      then LamExpr (TVar var (applySStrongSubst ssubst expr1)) (applySStrongSubst ssubst expr2)
+    else assert_total $ lamSStrongSubst ssubst freshTV ((applySStrongSubst (Sub tv (VarExpr freshTV))) expr2)
+   where
+    freeVarsExprs : List Variable
+    freeVarsExprs = (exFreeVars exprs)
+    freeVarsExpr2 : List Variable
+    freeVarsExpr2 = (exFreeVars expr2)
+    freeVars      : List Variable
+    freeVars      = freeVarsExprs ++ freeVarsExpr2
+    freshTV       : TVariable
+    freshTV       = (TVar (freshFreeVar freeVars) expr1)
+
+  piSStrongSubst : SSubst -> TVariable -> Expr -> Expr
+  piSStrongSubst ssubst@(Sub (TVar vars _) exprs) tv@(TVar var expr1) expr2 =
+    if var==vars
+      then PiExpr (TVar var (applySStrongSubst ssubst expr1)) expr2
+    else if not $ vars `elem` freeVarsExpr2
+      then PiExpr (TVar var (applySStrongSubst ssubst expr1)) expr2
+    else if not $ var  `elem` freeVarsExprs
+      then PiExpr (TVar var (applySStrongSubst ssubst expr1)) (applySStrongSubst ssubst expr2)
+    else assert_total $ piSStrongSubst ssubst freshTV ((applySStrongSubst (Sub tv (VarExpr freshTV))) expr2)
+   where
+    freeVarsExprs : List Variable
+    freeVarsExprs = (exFreeVars exprs)
+    freeVarsExpr2 : List Variable
+    freeVarsExpr2 = (exFreeVars expr2)
+    freeVars      : List Variable
+    freeVars      = freeVarsExprs ++ freeVarsExpr2
+    freshTV       : TVariable
+    freshTV       = (TVar (freshFreeVar freeVars) expr1)
