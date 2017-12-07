@@ -126,24 +126,24 @@ mutual
                             (_, _) => (Nothing, input)
                       (_, _) => (Nothing, input)
 
-  alts : List Token -> PResult (List Alt)
+  alts : List Token -> PResult (List CaseAlt)
   alts input = case alt input of
-                 (Just a, rest1) => let (as, rest2) = semicolonAlts (assert_smaller input rest1)
+                 (Just a, rest1) => let (as, rest2) = semicolonCaseAlts (assert_smaller input rest1)
                                     in (Just (a :: as), rest2)
                  (_, _) => (Nothing, input)
 
-  semicolonAlts : List Token -> (List Alt, List Token)
-  semicolonAlts input@(Operator ";" :: rest1) = case alt rest1 of
-                                          (Just a, rest2) => let (as, rest3) = semicolonAlts (assert_smaller input rest2)
+  semicolonCaseAlts : List Token -> (List CaseAlt, List Token)
+  semicolonCaseAlts input@(Operator ";" :: rest1) = case alt rest1 of
+                                          (Just a, rest2) => let (as, rest3) = semicolonCaseAlts (assert_smaller input rest2)
                                                              in (a :: as, rest3)
                                           (_, _) => ([], input)
-  semicolonAlts input = ([], input)
+  semicolonCaseAlts input = ([], input)
 
-  alt : List Token -> PResult Alt
+  alt : List Token -> PResult CaseAlt
   alt input = case bindVar input of
                 (Just tc, rest1) => case vars rest1 of
                   (vs, Operator "=>" :: rest2) => case parseExpr (assert_smaller input rest2) of
-                    (Just e, rest3) => (Just $ MKAlt tc (map (\v => TVar v Unknown) vs) [] e, rest3)
+                    (Just e, rest3) => (Just $ Alt tc (map (\v => TVar v Unknown) vs) [] e, rest3)
                     (_, _) => (Nothing, input)
                   (_, _) => (Nothing, input)
                 (_, _) => (Nothing, input)

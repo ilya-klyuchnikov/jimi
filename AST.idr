@@ -40,14 +40,14 @@ mutual
 
   -- Expression
   data Expr
-    = LamExpr TVariable Expr          -- Lambda Abstraction
-    | PiExpr TVariable Expr           -- Pi
-    | AppExpr Expr Expr               -- Application
-    | CaseExpr Expr (List Alt) Expr   -- Case
-    | VarExpr TVariable               -- Typed Variable
-    | LitExpr Lit                     -- Literal
-    | SortExpr Sort                   -- Sorts
-    | Unknown                         -- for untyped variables
+    = LamExpr TVariable Expr            -- Lambda Abstraction
+    | PiExpr TVariable Expr             -- Pi
+    | AppExpr Expr Expr                 -- Application
+    | CaseExpr Expr (List CaseAlt) Expr -- Case
+    | VarExpr TVariable                 -- Typed Variable
+    | LitExpr Lit                       -- Literal
+    | SortExpr Sort                     -- Sorts
+    | Unknown                           -- for untyped variables
 
   -- Type Constructor
   TCons : Type
@@ -66,7 +66,7 @@ mutual
 
 
   -- Case Alternative
-  data Alt = MKAlt TCons (List TCA) (List DCA) Expr
+  data CaseAlt = Alt TCons (List TCA) (List DCA) Expr
     --deriving (Show,Eq)
 
 -- Data Type Declaration
@@ -103,8 +103,8 @@ mutual
     show Unknown = "?"
     show (CaseExpr e alts tp) = "(case " ++ (show e) ++ "{ " ++ (show alts) ++ "} : " ++ (show tp) ++ " )"
 
-  Show Alt where
-    show (MKAlt tc tcs dcs e) = "Alt "
+  Show CaseAlt where
+    show (Alt tc tcs dcs e) = "Alt "
                                   ++ (assert_total (show tc))
                                   ++ " "
                                   ++ (assert_total (show tcs))

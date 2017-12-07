@@ -109,9 +109,9 @@ interface FreeVars t where
   exFreeVars : t -> List Variable
 
 mutual
-  FreeVars (List Alt) where
+  FreeVars (List CaseAlt) where
    exFreeVars [] = []
-   exFreeVars ((MKAlt tc tcas dcas res)::es) = (exFreeVars res) ++ (exFreeVars es)
+   exFreeVars ((Alt tc tcas dcas res)::es) = (exFreeVars res) ++ (exFreeVars es)
 
   FreeVars Expr where
    exFreeVars expr = case expr of
@@ -156,9 +156,9 @@ mutual
     CaseExpr expr1 alts t                           => CaseExpr (applySSubst ssubst expr1) (applySSubst ssubst alts) (applySSubst ssubst t)
     exrest                                          => exrest
 
-  SubstC (List Alt) where
+  SubstC (List CaseAlt) where
     applySSubst ssubst [] = []
-    applySSubst ssubst ((MKAlt tc tcas dcas res) :: as) = (MKAlt tc tcas dcas (applySSubst ssubst res)) :: (applySSubst ssubst as)
+    applySSubst ssubst ((Alt tc tcas dcas res) :: as) = (Alt tc tcas dcas (applySSubst ssubst res)) :: (applySSubst ssubst as)
 
 
 applySubToLeftMost : Subst -> Expr -> Expr
@@ -236,10 +236,10 @@ mutual
     CaseExpr expr1 alts t                           => CaseExpr (applySStrongSubst ssubst expr1) (applySStrongSubst ssubst alts) (applySStrongSubst ssubst t)
     exrest                                          => exrest
 
-  StrongSubstC Alt where
-    applySStrongSubst ssubst (MKAlt tc tcas dcas res) = MKAlt tc tcas dcas (applySStrongSubst ssubst res)
+  StrongSubstC CaseAlt where
+    applySStrongSubst ssubst (Alt tc tcas dcas res) = Alt tc tcas dcas (applySStrongSubst ssubst res)
 
-  StrongSubstC (List Alt) where
+  StrongSubstC (List CaseAlt) where
     applySStrongSubst ssubst [] = []
     applySStrongSubst ssubst (alt :: alts) = (applySStrongSubst ssubst alt) :: (applySStrongSubst ssubst alts)
 
