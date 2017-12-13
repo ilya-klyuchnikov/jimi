@@ -45,6 +45,11 @@ isNoRedex : RedexInf -> Bool
 isNoRedex NoRedex = True
 isNoRedex _       = False
 
+isBetaRedex : RedexInf -> Bool
+isBetaRedex BetaRedex = True
+isBetaRedex _         = False
+
+
 --------------------------------------------------------------------------------
 -- Extracting Sub Expressions
 --------------------------------------------------------------------------------
