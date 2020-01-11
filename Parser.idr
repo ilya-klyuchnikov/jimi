@@ -10,10 +10,10 @@ PInput : Type
 PInput = List Token
 
 PResult : Type -> Type
-PResult A = (Maybe A, PInput)
+PResult a = (Maybe a, PInput)
 
 Parser : Type -> Type
-Parser A = PInput -> PResult A
+Parser a = PInput -> PResult a
 
 -- and now - the same - to repeat everything?
 -- no -
