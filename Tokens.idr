@@ -15,51 +15,38 @@ record Tokens where
 
 
 jimi : Tokens
-jimi = MkTokens
-          jimiCommentLine
-          jimiIdentStart
-          jimiIdentChar
-          jimiNumStart
-          jimiNumChar
-          jimiKeywords
-          jimiOperators
-       where
-        jimiCommentLine : String
-        jimiCommentLine = "--"
+jimi =
+  MkTokens
+    jimiCommentLine
+    jimiIdentStart
+    jimiIdentChar
+    jimiNumStart
+    jimiNumChar
+    jimiKeywords
+    jimiOperators
+  where
+    jimiCommentLine : String
+    jimiCommentLine = "--"
 
-        jimiIdentStart : Char -> Bool
-        jimiIdentStart c = isAlpha c || (c == '_')
+    jimiIdentStart : Char -> Bool
+    jimiIdentStart c = isAlpha c || (c == '_')
 
-        jimiIdentChar : Char -> Bool
-        jimiIdentChar c = isAlphaNum c || (c `elem` (cast "_'"))
+    jimiIdentChar : Char -> Bool
+    jimiIdentChar c = isAlphaNum c || (c `elem` (cast "_'"))
 
-        jimiNumStart : Char -> Bool
-        jimiNumStart = isDigit
+    jimiNumStart : Char -> Bool
+    jimiNumStart = isDigit
 
-        jimiNumChar : Char -> Bool
-        jimiNumChar = isDigit
+    jimiNumChar : Char -> Bool
+    jimiNumChar = isDigit
 
-        jimiKeywords : List String
-        jimiKeywords = [ "case", "data", "letrec", "type", "import", "in", "let", "of", "at", "Int"]
+    jimiKeywords : List String
+    jimiKeywords = ["case", "data", "letrec", "type", "import", "in", "let", "of", "at", "Int"]
 
-        jimiOperators : List String
-        jimiOperators = [ "=>",
-                          "=",
-                          "::",
-                          ":",
-                          ";",
-                          "\\/",
-                          "\\",
-                          "->",
-                          "/\\",
-                          "|~|",
-                          ".",
-                          ",",
-                          "*",
-                          "||",
-                          "{", "}",
-                          "(", ")"
-                        ]
+    jimiOperators : List String
+    jimiOperators =
+      ["=>", "=", "::", ":", ";", "\\/", "\\", "->", "/\\", "|~|", ".", ",", "*", "||", "{", "}", "(", ")"]
+
 export
 tokens : Tokens
 tokens = jimi
