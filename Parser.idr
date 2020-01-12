@@ -4,7 +4,6 @@ import AST
 import Tokenizer
 
 %default total
-%access public export
 
 PInput : Type
 PInput = List Token
@@ -200,3 +199,24 @@ parseDefs input =
                 (Just vdecl, rest1) => let (tdecls, vdecls, rest2) = parseDefs (assert_smaller input rest1)
                                        in  (tdecls, vdecl :: vdecls, rest2)
                 (_, _) => ([], [], input)
+
+export
+ParseResult : Type
+ParseResult = (List TDeclaration, List VDeclaration)
+
+export
+parse : List Token -> ParseResult
+parse tokens =
+  case parseDefs tokens of
+    (tDecls, vDecls, []) =>
+      (tDecls, vDecls)
+    (_, _, rTokens) =>
+      idris_crash ("Unconsumed tokens: " ++ (show rTokens))
+
+export
+tDefs : ParseResult -> List TDeclaration
+tDefs = fst
+
+export
+vDefs : ParseResult -> List VDeclaration
+vDefs = snd

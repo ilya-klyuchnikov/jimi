@@ -36,7 +36,14 @@ data Token = Num String | Keyword String | Identifier String | Operator String
 
 export
 Show Token where
-  show _ = "token"
+  show (Num s) =
+    "Num " ++ s
+  show (Keyword s) =
+    "Keyword " ++ s
+  show (Identifier s) =
+    "Identifier " ++ s
+  show (Operator s) =
+    "Operator " ++ s
 
 data Dispatch
   = SpaceStart
@@ -53,15 +60,12 @@ dispatch c =
   else if isNumStart c then NumStart
   else UnknownStart
 
-public export
 Input : Type
 Input = List Char
 
-public export
 Result : Type
 Result = (List Token, Input)
 
-public export
 ResultS : Type
 ResultS = (List Token, String)
 
@@ -132,12 +136,14 @@ loop cs@(c' :: cs') acc =
     UnknownStart =>
       (reverse acc, cs)
 
-export
 tokenize : Input -> Result
 tokenize input = loop input []
 
 export
-tokenizeS : String -> ResultS
-tokenizeS input = toS (tokenize (cast input)) where
-  toS : Result -> ResultS
-  toS (tokens, rest) = (tokens, cast rest)
+tokenizeS : String -> (List Token)
+tokenizeS input =
+  case tokenize (cast input) of
+    (tokens, []) =>
+      tokens
+    (_, rest) =>
+      idris_crash ("Unconsumed input: " ++ cast rest)
