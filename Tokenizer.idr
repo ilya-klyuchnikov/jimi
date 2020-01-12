@@ -16,14 +16,20 @@ kws = keywords tokens
 firstOps : List Char
 firstOps = nub $ catMaybes $ map head' ops
 
-isIdentChar : Char -> Bool
-isIdentChar = (identChar tokens)
-
 isIdentStart : Char -> Bool
 isIdentStart = identStart tokens
 
+isIdentChar : Char -> Bool
+isIdentChar = identChar tokens
+
 isOperatorStart : Char -> Bool
 isOperatorStart c = c `elem` firstOps
+
+isNumStart : Char -> Bool
+isNumStart = numStart tokens
+
+isNumChar : Char -> Bool
+isNumChar = numChar tokens
 
 public export
 data Token = Num String | Keyword String | Identifier String | Operator String
@@ -32,13 +38,20 @@ export
 Show Token where
   show _ = "token"
 
-data Dispatch = SpaceStart | OperatorStart | IdentifierStart | UnknownStart
+data Dispatch
+  = SpaceStart
+  | OperatorStart
+  | IdentifierStart
+  | NumStart
+  | UnknownStart
 
 dispatch : Char -> Dispatch
-dispatch c = if isSpace c then SpaceStart
-             else if isIdentStart c then IdentifierStart
-             else if isOperatorStart c then OperatorStart
-             else UnknownStart
+dispatch c =
+  if isSpace c then SpaceStart
+  else if isOperatorStart c then OperatorStart
+  else if isIdentStart c then IdentifierStart
+  else if isNumStart c then NumStart
+  else UnknownStart
 
 public export
 Input : Type
@@ -70,12 +83,23 @@ skipSpaces : Chars -> Chars
 skipSpaces = dropWhile isSpace
 
 identifier : Char -> Chars -> (Token, Chars)
-identifier c cs = let (parsed, rest) = span isIdentChar cs
-                      idString = cast {to=String} (c :: parsed)
-                      token = if idString `elem` kws
-                              then Keyword idString
-                              else Identifier idString
-                  in  (token, rest)
+identifier c cs =
+  let
+    (parsed, rest) = span isIdentChar cs
+    idString = cast {to=String} (c :: parsed)
+    token = if idString `elem` kws then Keyword idString else Identifier idString
+  in
+    (token, rest)
+
+num : Char -> Chars -> (Token, Chars)
+num c cs =
+  let
+    (parsed, rest) = span isNumChar cs
+    numString = cast {to=String} (c :: parsed)
+    token = Num numString
+  in
+    (token, rest)
+
 
 -- space -> operator -> num -> idenifier
 loop : (input : Input) -> (acc : List Token) -> Result
@@ -84,14 +108,29 @@ loop cs@('-' :: '-' :: cs') acc = let rest = (inComment cs')
                                   in loop (assert_smaller cs rest) acc
 loop cs@(c' :: cs') acc =
   case dispatch c' of
-    SpaceStart      => let rest = (skipSpaces cs')
-                       in loop (assert_smaller cs rest) acc
-    OperatorStart   => case operator cs of
-                        Nothing => (reverse acc, cs)
-                        Just (tk, rest) => loop (assert_smaller cs rest) (tk :: acc)
-    IdentifierStart => let (tk, rest) = identifier c' cs'
-                       in  loop (assert_smaller cs rest) (tk :: acc)
-    UnknownStart    => (reverse acc, cs)
+    SpaceStart =>
+      let
+        rest = (skipSpaces cs')
+      in
+        loop (assert_smaller cs rest) acc
+    OperatorStart =>
+      case operator cs of
+        Nothing =>
+          (reverse acc, cs)
+        Just (tk, rest) =>
+          loop (assert_smaller cs rest) (tk :: acc)
+    NumStart =>
+      let
+        (tk, rest) = num c' cs'
+      in
+        loop (assert_smaller cs rest) (tk :: acc)
+    IdentifierStart =>
+      let
+        (tk, rest) = identifier c' cs'
+      in
+        loop (assert_smaller cs rest) (tk :: acc)
+    UnknownStart =>
+      (reverse acc, cs)
 
 export
 tokenize : Input -> Result
