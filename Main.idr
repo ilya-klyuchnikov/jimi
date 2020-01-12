@@ -4,30 +4,29 @@ import Tokenizer
 import Parser
 import AST
 
-tryParse : String -> IO ()
-tryParse source =
+processText : String -> IO ()
+processText text =
   do
-    defs <- pure (parse (tokenizeS source))
+    defs <- pure (parse (tokenizeS text))
     putStrLn "TDefs: "
     traverse (putStrLn . show) (tDefs defs)
     putStrLn "VDefs: "
     traverse (putStrLn . show) (vDefs defs)
     pure ()
 
-processFile : String -> (Either FileError String) -> IO ()
-processFile filename (Left err) =
-  idris_crash ("cannot read file")
-processFile filename (Right text) =
+processFile : String -> IO ()
+processFile "jimi" =
+  pure ()
+processFile filename =
   do
     putStrLn (">> Processing " ++ filename)
-    tryParse text
+    (Right text) <- readFile filename
+      | (Left err) => idris_crash (show err)
+    processText text
 
 main : IO ()
 main =
   do
-    filename1 <- pure "prelude.jimi"
-    textOrError1 <- readFile filename1
-    processFile filename1 textOrError1
-    filename2 <- pure "prog.jimi"
-    textOrError2 <- readFile filename2
-    processFile filename2 textOrError2
+    (_ :: filenames) <- getArgs
+    traverse processFile filenames
+    pure ()
