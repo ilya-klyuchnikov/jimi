@@ -53,7 +53,7 @@ mutual
   -- Expression
   data Expr
     = LamExpr TVariable Expr            -- Lambda Abstraction
-    | PiExpr TVariable Expr             -- Pi
+    | PiExpr TVariable Expr             -- Pi (forall)
     | AppExpr Expr Expr                 -- Application
     | CaseExpr Expr (List CaseAlt) Expr -- Case
     | VarExpr TVariable                 -- Typed Variable
@@ -125,7 +125,7 @@ mutual
     show Unknown =
       "?"
     show (CaseExpr e alts tp) =
-      "(case " ++ (show e) ++ "{ " ++ (show alts) ++ "} : " ++ (show tp) ++ " )"
+      "(case " ++ (show e) ++ "{" ++ (show alts) ++ "} : " ++ (show tp) ++ ")"
 
   Show CaseAlt where
     show (Alt tc tcs dcs e) =
