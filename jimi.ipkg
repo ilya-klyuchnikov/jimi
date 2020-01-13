@@ -1,0 +1,19 @@
+package jimi
+
+opts = "--ibcsubdir ibc"
+
+modules
+    = AST
+    , Eval
+    , Main
+    , Parser
+    , Reduce
+    , TermSupport
+    , Tokenizer
+    , Tokens
+
+main =
+    Main
+
+executable =
+    jimi
